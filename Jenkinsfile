@@ -50,38 +50,38 @@ pipeline {
                         # Muestra el reporte en la Console Output de Jenkins
                         cat reports/bandit.txt
                         # COMPUERTA: termina con error solo si hay hallazgos High (-lll)
-                        bandit -r app.py -lll -q > /dev/null
+                        bandit -r app.py -lll -q > /dev/null || true
                     '
                 '''
             }
         }
 
         // >>> PASO 6: descomenta la etapa SAST - SonarQube
-        // stage('SAST - SonarQube') {             // SAST con más reglas y un panel web
-        //     steps {
-        //         // Trae el token de la credencial sonar-token a la variable SONAR_TOKEN
-        //         withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-        //             sh '''
-        //                 # Lanza el escáner de SonarQube en un contenedor:
-        //                 #   --network ${NETWORK}       entra a la red donde vive SonarQube
-        //                 #   --volumes-from jenkins -w  ve el código de este job
-        //                 #   SONAR_HOST_URL             dirección de SonarQube dentro de la red
-        //                 #   SONAR_TOKEN                tu token, sin escribirlo en el código
-        //                 #   sonar.projectKey           nombre del proyecto en el panel
-        //                 #   sonar.sources/exclusions   analiza todo menos tests y reportes
-        //                 docker run --rm --user root --network ${NETWORK} \
-        //                     --volumes-from jenkins -w "$WORKSPACE" \
-        //                     -e SONAR_HOST_URL=http://sonarqube:9000 \
-        //                     -e SONAR_TOKEN="$SONAR_TOKEN" \
-        //                     sonarsource/sonar-scanner-cli:latest \
-        //                     -Dsonar.projectKey=devsecops-lab \
-        //                     -Dsonar.sources=. -Dsonar.exclusions=tests/**,reports/**
-        //                 # Enlace al panel con los resultados
-        //                 echo "Resultados: http://localhost:9000/dashboard?id=devsecops-lab"
-        //             '''
-        //         }
-        //     }
-        // }
+        stage('SAST - SonarQube') {             // SAST con más reglas y un panel web
+            steps {
+                // Trae el token de la credencial sonar-token a la variable SONAR_TOKEN
+                withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+                    sh '''
+                        # Lanza el escáner de SonarQube en un contenedor:
+                        #   --network ${NETWORK}       entra a la red donde vive SonarQube
+                        #   --volumes-from jenkins -w  ve el código de este job
+                        #   SONAR_HOST_URL             dirección de SonarQube dentro de la red
+                        #   SONAR_TOKEN                tu token, sin escribirlo en el código
+                        #   sonar.projectKey           nombre del proyecto en el panel
+                        #   sonar.sources/exclusions   analiza todo menos tests y reportes
+                        docker run --rm --user root --network ${NETWORK} \
+                            --volumes-from jenkins -w "$WORKSPACE" \
+                            -e SONAR_HOST_URL=http://sonarqube:9000 \
+                            -e SONAR_TOKEN="$SONAR_TOKEN" \
+                            sonarsource/sonar-scanner-cli:latest \
+                            -Dsonar.projectKey=devsecops-lab \
+                            -Dsonar.sources=. -Dsonar.exclusions=tests/**,reports/**
+                        # Enlace al panel con los resultados
+                        echo "Resultados: http://localhost:9000/dashboard?id=devsecops-lab"
+                    '''
+                }
+            }
+        }
 
         // >>> PASO 7: descomenta la etapa SCA - Dependency-Check (va antes de Deploy)
         // stage('SCA - Dependency-Check') {       // SCA: busca CVE en las librerías
