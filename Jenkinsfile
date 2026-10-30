@@ -34,27 +34,27 @@ pipeline {
         }
 
         // >>> PASO 5: descomenta la etapa SAST - Bandit
-        // stage('SAST - Bandit') {                // SAST: revisa el código sin ejecutarlo
-        //     steps {                             // lo que hace la etapa
-        //         sh '''
-        //             # Carpeta de reportes: Jenkins la archiva al final (bloque post)
-        //             mkdir -p reports
-        //             # Bandit corre en un contenedor de Python que ve tu código:
-        //             # --volumes-from jenkins presta la carpeta de trabajo de Jenkins
-        //             # y -w "$WORKSPACE" entra a la carpeta de este job
-        //             docker run --rm --volumes-from jenkins -w "$WORKSPACE" python:3.12-slim sh -c '
-        //                 # Instala Bandit dentro del contenedor
-        //                 pip install -q bandit
-        //                 # Reporte completo con todas las severidades (|| true: aquí no corta)
-        //                 bandit -r app.py -f txt -o reports/bandit.txt || true
-        //                 # Muestra el reporte en la Console Output de Jenkins
-        //                 cat reports/bandit.txt
-        //                 # COMPUERTA: termina con error solo si hay hallazgos High (-lll)
-        //                 bandit -r app.py -lll -q > /dev/null
-        //             '
-        //         '''
-        //     }
-        // }
+        stage('SAST - Bandit') {                // SAST: revisa el código sin ejecutarlo
+            steps {                             // lo que hace la etapa
+                sh '''
+                    # Carpeta de reportes: Jenkins la archiva al final (bloque post)
+                    mkdir -p reports
+                    # Bandit corre en un contenedor de Python que ve tu código:
+                    # --volumes-from jenkins presta la carpeta de trabajo de Jenkins
+                    # y -w "$WORKSPACE" entra a la carpeta de este job
+                    docker run --rm --volumes-from jenkins -w "$WORKSPACE" python:3.12-slim sh -c '
+                        # Instala Bandit dentro del contenedor
+                        pip install -q bandit
+                        # Reporte completo con todas las severidades (|| true: aquí no corta)
+                        bandit -r app.py -f txt -o reports/bandit.txt || true
+                        # Muestra el reporte en la Console Output de Jenkins
+                        cat reports/bandit.txt
+                        # COMPUERTA: termina con error solo si hay hallazgos High (-lll)
+                        bandit -r app.py -lll -q > /dev/null
+                    '
+                '''
+            }
+        }
 
         // >>> PASO 6: descomenta la etapa SAST - SonarQube
         // stage('SAST - SonarQube') {             // SAST con más reglas y un panel web
