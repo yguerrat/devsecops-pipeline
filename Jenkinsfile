@@ -84,46 +84,46 @@ pipeline {
         }
 
         // >>> PASO 7: descomenta la etapa SCA - Dependency-Check (va antes de Deploy)
-        // stage('SCA - Dependency-Check') {       // SCA: busca CVE en las librerías
-        //     steps {
-        //         // Trae tu API key de NVD de la credencial nvd-api-key a NVD_API_KEY
-        //         withCredentials([string(credentialsId: 'nvd-api-key', variable: 'NVD_API_KEY')]) {
-        //             sh '''
-        //                 # Carpeta de reportes y limpieza de una ejecución anterior
-        //                 mkdir -p reports
-        //                 rm -rf sca-deps
-        //                 # Instala las librerías de requirements.txt en la carpeta sca-deps,
-        //                 # para que Dependency-Check las revise ya instaladas
-        //                 docker run --rm --volumes-from jenkins -w "$WORKSPACE" python:3.12-slim \
-        //                     pip install -q --root-user-action=ignore --disable-pip-version-check \
-        //                     --target sca-deps -r requirements.txt
-        //                 # Código de salida de Dependency-Check (0 = sin problemas)
-        //                 RC=0
-        //                 # Lanza Dependency-Check en un contenedor:
-        //                 #   -v dependency-check-data   reusa la base de NVD ya descargada
-        //                 #   --scan sca-deps            revisa cada librería instalada
-        //                 #   --enableExperimental       activa el analizador de Python
-        //                 #   --disableOssIndex          apaga una fuente que pide otra cuenta
-        //                 #   --nvdApiKey                tu clave, sin escribirla en el código
-        //                 #   --format/--out             deja el reporte HTML y JSON en reports
-        //                 #   --failOnCVSS 7             COMPUERTA: falla con un CVE de CVSS 7 o más
-        //                 #   || RC=$?                   guarda el resultado sin cortar todavía
-        //                 docker run --rm --user root \
-        //                     --volumes-from jenkins -w "$WORKSPACE" \
-        //                     -v dependency-check-data:/usr/share/dependency-check/data \
-        //                     owasp/dependency-check:latest \
-        //                     --scan sca-deps --project devsecops-lab \
-        //                     --enableExperimental --disableOssIndex \
-        //                     --nvdApiKey "$NVD_API_KEY" \
-        //                     --format HTML --format JSON --out reports \
-        //                     --failOnCVSS 7 || RC=$?
-        //                 # Borra la carpeta temporal y recién entonces aplica la compuerta
-        //                 rm -rf sca-deps
-        //                 exit $RC
-        //             '''
-        //         }
-        //     }
-        // }
+        stage('SCA - Dependency-Check') {       // SCA: busca CVE en las librerías
+            steps {
+                // Trae tu API key de NVD de la credencial nvd-api-key a NVD_API_KEY
+                withCredentials([string(credentialsId: 'nvd-api-key', variable: 'NVD_API_KEY')]) {
+                    sh '''
+                        # Carpeta de reportes y limpieza de una ejecución anterior
+                        mkdir -p reports
+                        rm -rf sca-deps
+                        # Instala las librerías de requirements.txt en la carpeta sca-deps,
+                        # para que Dependency-Check las revise ya instaladas
+                        docker run --rm --volumes-from jenkins -w "$WORKSPACE" python:3.12-slim \
+                            pip install -q --root-user-action=ignore --disable-pip-version-check \
+                            --target sca-deps -r requirements.txt
+                        # Código de salida de Dependency-Check (0 = sin problemas)
+                        RC=0
+                        # Lanza Dependency-Check en un contenedor:
+                        #   -v dependency-check-data   reusa la base de NVD ya descargada
+                        #   --scan sca-deps            revisa cada librería instalada
+                        #   --enableExperimental       activa el analizador de Python
+                        #   --disableOssIndex          apaga una fuente que pide otra cuenta
+                        #   --nvdApiKey                tu clave, sin escribirla en el código
+                        #   --format/--out             deja el reporte HTML y JSON en reports
+                        #   --failOnCVSS 7             COMPUERTA: falla con un CVE de CVSS 7 o más
+                        #   || RC=$?                   guarda el resultado sin cortar todavía
+                        docker run --rm --user root \
+                            --volumes-from jenkins -w "$WORKSPACE" \
+                            -v dependency-check-data:/usr/share/dependency-check/data \
+                            owasp/dependency-check:latest \
+                            --scan sca-deps --project devsecops-lab \
+                            --enableExperimental --disableOssIndex \
+                            --nvdApiKey "$NVD_API_KEY" \
+                            --format HTML --format JSON --out reports \
+                            --failOnCVSS 7 || RC=$?
+                        # Borra la carpeta temporal y recién entonces aplica la compuerta
+                        rm -rf sca-deps
+                        exit $RC
+                    '''
+                }
+            }
+        }
 
         stage('Deploy') {                       // despliega la app (solo si todo lo anterior pasó)
             steps {
