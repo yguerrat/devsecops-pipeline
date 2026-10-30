@@ -146,35 +146,35 @@ pipeline {
         }
 
         // >>> PASO 8: descomenta la etapa DAST - OWASP ZAP (va después de Deploy)
-        // stage('DAST - OWASP ZAP') {             // DAST: ataca la app ya desplegada
-        //     steps {
-        //         sh '''
-        //             # Carpeta de reportes
-        //             mkdir -p reports
-        //             # Código de salida de ZAP (0 = sin alertas)
-        //             RC=0
-        //             # Borra un contenedor de ZAP que haya quedado de un build anterior
-        //             docker rm -f zap-${BUILD_NUMBER} || true
-        //             # Lanza ZAP en modo baseline (pasivo y rápido):
-        //             #   --network ${NETWORK}   misma red que la app, la alcanza como flask-app
-        //             #   -v zap-wrk-...         volumen donde ZAP deja sus reportes
-        //             #   -t http://...:5000/    la app que va a analizar
-        //             #   -r / -J                reporte en HTML y en JSON
-        //             #   || RC=$?               guarda el resultado sin detener el pipeline
-        //             docker run --name zap-${BUILD_NUMBER} --user root --network ${NETWORK} \
-        //                 -v zap-wrk-${BUILD_NUMBER}:/zap/wrk \
-        //                 ghcr.io/zaproxy/zaproxy:stable \
-        //                 zap-baseline.py -t http://${APP_NAME}:5000/ -r zap_report.html -J zap_report.json || RC=$?
-        //             # Copia los reportes de ZAP a la carpeta reports del job
-        //             docker cp zap-${BUILD_NUMBER}:/zap/wrk/. reports/ || true
-        //             # Limpia el contenedor y el volumen de ZAP
-        //             docker rm zap-${BUILD_NUMBER}
-        //             docker volume rm zap-wrk-${BUILD_NUMBER} || true
-        //             # Informa el resultado: esta etapa no bloquea el pipeline
-        //             echo "ZAP terminó con código $RC (0 = sin alertas, 1 = fallos, 2 = advertencias). Esta etapa informa, no bloquea."
-        //         '''
-        //     }
-        // }
+        stage('DAST - OWASP ZAP') {             // DAST: ataca la app ya desplegada
+            steps {
+                sh '''
+                    # Carpeta de reportes
+                    mkdir -p reports
+                    # Código de salida de ZAP (0 = sin alertas)
+                    RC=0
+                    # Borra un contenedor de ZAP que haya quedado de un build anterior
+                    docker rm -f zap-${BUILD_NUMBER} || true
+                    # Lanza ZAP en modo baseline (pasivo y rápido):
+                    #   --network ${NETWORK}   misma red que la app, la alcanza como flask-app
+                    #   -v zap-wrk-...         volumen donde ZAP deja sus reportes
+                    #   -t http://...:5000/    la app que va a analizar
+                    #   -r / -J                reporte en HTML y en JSON
+                    #   || RC=$?               guarda el resultado sin detener el pipeline
+                    docker run --name zap-${BUILD_NUMBER} --user root --network ${NETWORK} \
+                        -v zap-wrk-${BUILD_NUMBER}:/zap/wrk \
+                        ghcr.io/zaproxy/zaproxy:stable \
+                        zap-baseline.py -t http://${APP_NAME}:5000/ -r zap_report.html -J zap_report.json || RC=$?
+                    # Copia los reportes de ZAP a la carpeta reports del job
+                    docker cp zap-${BUILD_NUMBER}:/zap/wrk/. reports/ || true
+                    # Limpia el contenedor y el volumen de ZAP
+                    docker rm zap-${BUILD_NUMBER}
+                    docker volume rm zap-wrk-${BUILD_NUMBER} || true
+                    # Informa el resultado: esta etapa no bloquea el pipeline
+                    echo "ZAP terminó con código $RC (0 = sin alertas, 1 = fallos, 2 = advertencias). Esta etapa informa, no bloquea."
+                '''
+            }
+        }
     }
 
     post {                                      // se ejecuta al terminar el pipeline
